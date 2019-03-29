@@ -2,8 +2,9 @@ import vlc
 import pafy
 from collections import deque
 
-TEST_URL = 'https://www.youtube.com/watch?v=KpOtuoHL45Y'
-INVALID_URL = 'Invalid URL entered'
+INVALID_URL_ERR = 'Invalid URL Entered'
+EMPTY_QUEUE_ERR = 'No Songs in Queue'
+
 
 class Song:
     def __init__(self, title, length, url):
@@ -32,11 +33,10 @@ class MusicPlayer:
         self.current_song = None
 
     def add_to_queue(self, url):
-        # TODO: need to check for valid youtube url
         try:
             url = pafy.new(url)
         except (ValueError, OSError):
-            return INVALID_URL
+            return INVALID_URL_ERR
         best = url.getbestaudio()
         best_url = best.url
         title = url.title
@@ -48,16 +48,16 @@ class MusicPlayer:
     def play_track(self):
         if self.playing:
             self.play()
-            return True
+            return 0
         self.playing = True
         if not len(self.queue) > 0:
-            return False
+            return EMPTY_QUEUE_ERR
         self.current_song = self.queue.popleft()
         self.media = self.instance.media_new(self.current_song.get_url())
         self.media.get_mrl()
         self.player.set_media(self.media)
         self.player.play()
-        return True
+        return 0
 
     def get_current_title(self):
         if self.current_song is not None:
@@ -83,5 +83,5 @@ class MusicPlayer:
 
     def skip_track(self):
         self.stop_track()
-        self.play_track()
+        return self.play_track()
 
