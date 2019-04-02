@@ -31,11 +31,14 @@ class MusicPlayer:
         self.media = None
         self.current_song = None
 
-    """ Takes a youtube link and adds it to the playing queue if it is valid.
-        :param url the youtube link
-        :param front an optional param that when true, appends it to the front of the queue.
-    """
-    def add_to_queue(self, url, front=False):
+    def add_to_queue(self, url: str, front: bool = False):
+        """
+        Takes a youtube link and adds it to the playing queue if it is valid.
+        :param url: the youtube link
+        :type url: str
+        :param front: an optional param that when true, appends it to the front of the queue.
+        :type front: bool
+        """
         try:
             url = pafy.new(url)
         except (ValueError, OSError):
@@ -53,15 +56,22 @@ class MusicPlayer:
     def handle_song_finished(self, event):
         self.play()
 
-    """ Returns a list(str) of all song titles in the deque in order.
-    """
     def publish_queue(self):
+        """
+        Returns a list(str) of all song titles in the deque in order.
+        :rtype: list
+        """
         songlist = []
         for song in self.queue:
             songlist.append(song.get_title())
         return songlist
 
     def play(self):
+        """
+        Main function that handles play logic.
+        :return: 0 on success, error code otherwise
+        :rtype: int
+        """
         state = self.player.get_state()
         # case paused, resume play
         if state == State(4):
@@ -86,20 +96,38 @@ class MusicPlayer:
         return 0
 
     def get_current_title(self):
+        """
+        Gets the current title of the song playing.
+        :return: Title of the song, or False if no song is playing
+        :rtype: str or bool
+        """
         if self.current_song is not None:
             return self.current_song.get_title()
         return False
 
-    def set_volume(self, val):
+    def set_volume(self, val: int):
+        """
+        :param val: the volume percentage (0-100)
+        :type val: int
+        :return: 0 on success, -1 on failure
+        :rtype: int
+        """
         return self.player.audio_set_volume(int(val))
 
     def get_volume(self):
+        """
+        :return: The volume percentage from 0-100
+        :rtype: int
+        """
         return self.player.audio_get_volume()
 
-    """ Returns a tuple of total length and current time in milliseconds
-        Returns -1, -1 if not available
-    """
     def get_current_song_duration(self):
+        """
+        Function that gets the current song's total duration and current time
+        :return: A tuple of the total length and current time of the song in milliseconds.
+                 Returns -1, -1 if there is no information available
+        :rtype: Tuple(int, int)
+        """
         if not self.player.get_length() == -1:
             return self.player.get_length(), self.player.get_time()
         else:
