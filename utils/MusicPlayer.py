@@ -31,7 +31,11 @@ class MusicPlayer:
         self.media = None
         self.current_song = None
 
-    def add_to_queue(self, url):
+    """ Takes a youtube link and adds it to the playing queue if it is valid.
+        :param url the youtube link
+        :param front an optional param that when true, appends it to the front of the queue.
+    """
+    def add_to_queue(self, url, front=False):
         try:
             url = pafy.new(url)
         except (ValueError, OSError):
@@ -40,7 +44,10 @@ class MusicPlayer:
         best_url = best.url
         title = url.title
         s = Song(title, best_url)
-        self.queue.append(s)
+        if front:
+            self.queue.appendleft(s)
+        else:
+            self.queue.append(s)
         return 0
 
     def handle_song_finished(self, event):
