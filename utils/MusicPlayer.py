@@ -26,6 +26,8 @@ class MusicPlayer:
         self.queue = deque()
         self.instance = vlc.Instance()
         self.player = self.instance.media_player_new()
+        self.event_manager = self.player.event_manager()
+        self.event_manager.event_attach(vlc.EventType.MediaPlayerEndReached, self.handle_song_finished)
         self.media = None
         self.current_song = None
 
@@ -40,6 +42,9 @@ class MusicPlayer:
         s = Song(title, best_url)
         self.queue.append(s)
         return 0
+
+    def handle_song_finished(self, event):
+        self.play()
 
     """ Returns a list(str) of all song titles in the deque in order.
     """
