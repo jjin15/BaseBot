@@ -83,6 +83,12 @@ class MusicPlayer:
             return self.current_song.get_title()
         return False
 
+    def set_volume(self, val):
+        return self.player.audio_set_volume(int(val))
+
+    def get_volume(self):
+        return self.player.audio_get_volume()
+
     """ Returns a tuple of total length and current time in milliseconds
         Returns -1, -1 if not available
     """
