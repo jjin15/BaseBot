@@ -71,7 +71,8 @@ class DatabaseManager:
     """
     def change_user_points(self, uname, points):
         if not self.check_user_exists(uname):
-            return False
+            if not self.add_user(uname):
+                return False
         # need to pull current points
         res = self.get_user_points(uname)
         if not res:
@@ -82,7 +83,7 @@ class DatabaseManager:
             data = (new_res, uname)
             self.cur.execute("UPDATE Users SET points=? WHERE name=?", data)
         except Exception as e:
-            print ('exception in change_user_points_update: ' + str(e))
+            print('exception in change_user_points_update: ' + str(e))
             return False
         self.conn.commit()
         return True

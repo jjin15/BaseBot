@@ -15,6 +15,7 @@ class BaseBot:
     def __init__(self):
         self.conn = None
         self.command_dict = {}
+        self.service_list = {}
         self.connect_to_channel()
         self.run_main()
 
@@ -40,30 +41,45 @@ class BaseBot:
                 continue
             status = self.handle_message(user, message)
 
-    """ Allows for registering commands
-        Arguments:
-            - cmd: type: str The string to look for ex "!test"
-            - cmd_handler: type: method The method to run when this command is entered
-    """
-    def register_command(self, cmd, cmd_handler):
+    def register_command(self, cmd: str, cmd_handler):
+        """
+        Allows registering of commands
+        :param cmd: the string to trigger the command on
+        :type cmd: str
+        :param cmd_handler: the function to run when the command is entered
+        :type cmd_handler: function
+        :param service: a service that needs to run continuously until cancelled
+        """
         if cmd not in self.command_dict.keys():
             self.command_dict[cmd] = cmd_handler
 
-    """ De-registers a command so that it is no longer usable.
-    """
-    def deregister_command(self, cmd):
+    def deregister_command(self, cmd: str):
+        """
+        De-registers a command so it is no longer triggering the corresponding function
+        :param cmd: the command to de-register
+        :type cmd: str
+        """
         if cmd in self.command_dict.keys():
             self.command_dict.pop(cmd)
 
+    def register_service(self, service_name, service):
+        if service_name not in self.service_list.keys():
+            self.service_list[service_name] = service
+
+    def deregister_service(self, service_name):
+        if service_name in self.service_list.keys():
+            self.service_list.pop(service_name)
+
     """ Runs a command from the registered command_dict
     """
-    def run_command(self, cmd):
-        self.command_dict[cmd]()
+    def run_command(self, cmd: str, cmd_data: str):
+        output = self.command_dict[cmd](cmd_data)
+        return output
 
     """ Sends a message to the chat group.
         Defaults to the configured channel, but can also send messages to other channels.
     """
-    def send_message(self, msg, user=CHAN):
+    def send_message(self, msg: str, user: str = CHAN):
         message = "PRIVMSG #%s :%s\r\n" % (user, msg)
         self.conn.send(message.encode("utf-8"))
 
@@ -78,7 +94,7 @@ class BaseBot:
         Returns:
             - status, user, message
     """
-    def parse_message(self, msg):
+    def parse_message(self, msg: str):
         # first check for ping from server
         if msg == PING:
             self.send_pong()
@@ -103,13 +119,22 @@ class BaseBot:
     def handle_message(self, user, message):
         if message[0] == "!":
             # need to check the message against the commands
-            data = message.split(" ")
+            data = message.split(" ", 1)
             if data[0] in self.command_dict.keys():
+                try:
+                    cmd_data = data[1]
+                except IndexError:
+                    cmd_data = None
                 # run command
-                return self.run_command(data[0])
+                return self.run_command(data[0], cmd_data)
             else:
                 return 1
         else:
+            for k, s in self.service_list.items():
+                output = s(user, message)
+                # service handler should return
+                if output:
+                    self.send_message(output)
             return 1
 
     """ The following methods are standard twitch chat commands for mods.
