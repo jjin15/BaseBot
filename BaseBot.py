@@ -2,6 +2,7 @@ import socket
 import re
 import time
 import sys
+from PyQt5.QtCore import pyqtSignal, QObject
 
 HOSTNAME = "irc.chat.twitch.tv"
 PORT = 6667
@@ -11,18 +12,21 @@ CHAN = "yourchannel"
 PING = "PING :tmi.twitch.tv\r\n"
 
 
-class BaseBot:
-    def __init__(self):
+class BaseBot(QObject):
+    chat_msg_sig = pyqtSignal(str)
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
         self.conn = None
         self.command_dict = {}
         self.service_list = {}
         self.connect_to_channel()
-        self.run_main()
+        # self.run_main()
 
     """ Method uses the configurable global variables to connect to the Twitch IRC Server
     """
     def connect_to_channel(self):
-        self.conn = socket.socket()
+        self.conn = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.conn.connect((HOSTNAME, PORT))
         self.conn.send("PASS {}\r\n".format(PASS).encode("utf-8"))
         self.conn.send("NICK {}\r\n".format(NICK).encode("utf-8"))
@@ -32,11 +36,26 @@ class BaseBot:
     """
     def run_main(self):
         response = ""
+        first_response = False
+        status = None
         while True:
             response = response + self.conn.recv(1024).decode("utf-8")
+            if response == '':
+                if first_response:
+                    first_response = False
+                    self.connect_to_channel()
+                    response = ''
+                    continue
             all_data = response.split("\r\n")
+            first_response = True
+            if len(all_data) == 0:
+                continue
             response = all_data.pop()
-            status, user, message = self.parse_message(all_data[0])
+            try:
+                status, user, message = self.parse_message(all_data[0])
+            except IndexError as e:
+                print(e)
+                continue
             if status:
                 continue
             status = self.handle_message(user, message)
@@ -109,9 +128,12 @@ class BaseBot:
             username = data[0].split("!")[0][1:]
             # print(username)
             message = data[-1]
-            print(message)
+            # print(message)
+            printstr = str(username) + ": " + str(message)
+            print(printstr)
+            self.chat_msg_sig.emit(str(printstr))
             return 0, username, message
-        return 1, -1,-1
+        return 1, -1, -1
 
     """ Function to read the message and determine whether it is a command.
         Non command messages are ignored.
