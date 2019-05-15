@@ -141,3 +141,7 @@ class MusicPlayer:
     def skip_track(self):
         self.stop_track()
         return self.play()
+
+    def close(self):
+        pass
+

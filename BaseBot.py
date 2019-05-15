@@ -3,6 +3,8 @@ import re
 import time
 import sys
 from PyQt5.QtCore import pyqtSignal, QObject
+from threading import Thread
+from utils.DatabaseManager import *
 
 HOSTNAME = "irc.chat.twitch.tv"
 PORT = 6667
@@ -156,8 +158,10 @@ class BaseBot(QObject):
                 output = s(user, message)
                 # service handler should return
                 if output:
-                    self.send_message(output)
-            return 1
+                    print(output)
+                    pass
+                    # self.send_message(output)
+            return 0
 
     """ The following methods are standard twitch chat commands for mods.
     """
